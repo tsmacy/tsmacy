@@ -412,15 +412,54 @@ setTimeout(()=>location.reload(), 15 * 60 * 1000);
 <section>
 <h2 style="color: yellow;">Live Local Radar</h2>
 
-<iframe 
-  src="https://meteoblue.com" 
-  frameborder="0" 
-  scrolling="No" 
-  width="100%" 
-  height="500" 
-  style="border:none;"
-  sandbox="allow-same-origin allow-scripts allow-popups">
-</iframe>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Weather Radar</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+        }
+        .radar-container {
+            width: 100%;
+            max-width: 650px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        iframe {
+            width: 100%;
+            height: 450px;
+            border: none;
+            border-radius: 4px;
+        }
+        h2 {
+            margin-top: 0;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+<div class="radar-container">
+    <h2>Local Doppler Radar</h2>
+    <!-- RainViewer Interactive Embed (Free, responsive, and customizable) -->
+    <iframe src="https://rainviewer.com" allowfullscreen></iframe>
+</div>
+
+</body>
+</html>
+
 
 
 
