@@ -84,7 +84,7 @@
 </header>
 
 <section>
-  <h2 style="color: yellow;">Active Alerts</h2>
+  <h2 style="color: yellow;">Local Weather Alerts</h2>
   <div id="alerts"><div class="alert-row alert-none"><span class="dot"></span>Loading alerts…</div></div>
 </section>
 
@@ -412,7 +412,85 @@ setTimeout(()=>location.reload(), 15 * 60 * 1000);
 <section>
 <h2 style="color: yellow;">Live Local Radar</h2>
 
-ddd
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KDOX Doppler Radar Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #121212; /* Dark theme emphasizes radar colors */
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+        }
+        .radar-card {
+            background-color: #1e1e1e;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
+        .radar-img-wrapper {
+            position: relative;
+            width: 100%;
+            border: 1px solid #333333;
+            border-radius: 4px;
+            overflow: hidden;
+            background-color: #000000;
+        }
+        .radar-img-wrapper img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        h2 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.25rem;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="radar-card">
+    <h2>KDOX Live Radar Loop (Dover, DE)</h2>
+    <div class="radar-img-wrapper">
+        <!-- The ID allows the JavaScript below to target and update the image src -->
+        <img id="kdoxRadar" alt="NWS KDOX Doppler Radar Loop">
+    </div>
+</div>
+
+<script>
+    // Appends a dynamic timestamp parameter to bypass browser caching
+    function refreshRadar() {
+        const radarImg = document.getElementById('kdoxRadar');
+        const timestamp = new Date().getTime();
+        radarImg.src = `https://weather.gov{timestamp}`;
+    }
+
+    // Run immediately on page load
+    refreshRadar();
+
+    // Automatically check for a fresh image every 5 minutes (300000 ms)
+    setInterval(refreshRadar, 300000);
+</script>
+
+</body>
+</html>
+
+
+</body>
+</html>
+
 
 </body>
 </html>
