@@ -250,6 +250,10 @@ function renderZoneCol(elId, dayparts){
   el.innerHTML = dayparts.map(d => `<div class="daypart"><span class="label">${d.label}</span><span class="text">${d.text}</span></div>`).join('');
 }
 
+<ul>
+  <li><a href="https://wwwv.accuweather.com/wxbrief/dr/?user=wpgg" target="_blank">WPGG's AccuWeather Forecast for Atlantic City</a></li>
+</ul>
+  
 // ---------- Surf summary (SRF text product — the only NWS source for these fields) ----------
 async function fetchSurfProductText(){
   try{
@@ -410,79 +414,13 @@ setTimeout(()=>location.reload(), 15 * 60 * 1000);
 </section>
 
 <section>
-<h2 style="color: yellow;">Live Local Radar</h2>
+<h2 style="color: yellow;">Local Weather Links</h2>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KDOX Doppler Radar Viewer</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background-color: #121212; /* Dark theme emphasizes radar colors */
-            color: #ffffff;
-            margin: 0;
-            padding: 20px;
-        }
-        .radar-card {
-            background-color: #1e1e1e;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-            text-align: center;
-            max-width: 600px;
-            width: 100%;
-        }
-        .radar-img-wrapper {
-            position: relative;
-            width: 100%;
-            border: 1px solid #333333;
-            border-radius: 4px;
-            overflow: hidden;
-            background-color: #000000;
-        }
-        .radar-img-wrapper img {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-        h2 {
-            margin-top: 0;
-            margin-bottom: 15px;
-            font-size: 1.25rem;
-            letter-spacing: 0.5px;
-        }
-    </style>
-</head>
-<body>
+<iframe width="650" height="450" src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=in&metricTemp=°F&metricWind=mph&zoom=8&overlay=radar&product=radar&level=surface&lat=39.324&lon=-74.774&message=true" frameborder="0"></iframe>
+  
+<a href="https://radar.weather.gov/station/KDOX/reflectivity/standard" target="_blank">Local Doppler Radar</a>
 
-<div class="radar-card">
-    <h2>KDOX Live Radar Loop (Dover, DE)</h2>
-    <div class="radar-img-wrapper">
-        <!-- The ID allows the JavaScript below to target and update the image src -->
-        <img id="kdoxRadar" alt="NWS KDOX Doppler Radar Loop">
-    </div>
-</div>
 
-<script>
-    // Appends a dynamic timestamp parameter to bypass browser caching
-    function refreshRadar() {
-        const radarImg = document.getElementById('kdoxRadar');
-        const timestamp = new Date().getTime();
-        radarImg.src = `https://weather.gov{timestamp}`;
-    }
-
-    // Run immediately on page load
-    refreshRadar();
-
-    // Automatically check for a fresh image every 5 minutes (300000 ms)
-    setInterval(refreshRadar, 300000);
-</script>
 
 </body>
 </html>
