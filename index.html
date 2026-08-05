@@ -249,10 +249,6 @@ function renderZoneCol(elId, dayparts){
   }
   el.innerHTML = dayparts.map(d => `<div class="daypart"><span class="label">${d.label}</span><span class="text">${d.text}</span></div>`).join('');
 }
-
-<ul>
-  <li><a href="https://wwwv.accuweather.com/wxbrief/dr/?user=wpgg" target="_blank">WPGG's AccuWeather Forecast for Atlantic City</a></li>
-</ul>
   
 // ---------- Surf summary (SRF text product — the only NWS source for these fields) ----------
 async function fetchSurfProductText(){
@@ -414,21 +410,9 @@ setTimeout(()=>location.reload(), 15 * 60 * 1000);
 </section>
 
 <section>
-<h2 style="color: yellow;">Local Weather Links</h2>
-
+<h2 style="color: yellow;">Local Doppler Radar</h2>
+<center>
 <iframe width="650" height="450" src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=in&metricTemp=°F&metricWind=mph&zoom=8&overlay=radar&product=radar&level=surface&lat=39.324&lon=-74.774&message=true" frameborder="0"></iframe>
-  
-<a href="https://radar.weather.gov/station/KDOX/reflectivity/standard" target="_blank">Local Doppler Radar</a>
-
-
-
-</body>
-</html>
-
-
-</body>
-</html>
-
-
+</center>
 </body>
 </html>
