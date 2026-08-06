@@ -287,7 +287,7 @@ async function fetchStationObservation(id){
     const tempF = (c === null || c === undefined) ? null : Math.round(cToF(c));
     const weather = props.textDescription || null;
     const remarks = parseAsosRemarks(props.rawMessage);
-    const conditionsParts = [weather ? `Weather: ${weather}` : null, ...remarks].filter(Boolean);
+    const conditionsParts = [weather ? `Current Weather: ${weather}` : null, ...remarks].filter(Boolean);
     const conditions = conditionsParts.length ? conditionsParts.join(' • ') : null;
     return { tempF, conditions };
   }catch(e){ return { tempF: null, conditions: null }; }
