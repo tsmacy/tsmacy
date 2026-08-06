@@ -57,6 +57,11 @@
   }
   .temp-row .val{font-weight:800; font-size:17px; color:#fff;}
   .temp-row .val.dash{color:var(--dim); font-weight:600;}
+  .station-conditions{
+    font-size:13px; color:var(--dim); font-weight:600;
+    padding:2px 0 8px 0; border-bottom:1px solid var(--line);
+  }
+  .temp-row.no-divider{border-bottom:none;}
   /* Zone forecasts */
   .zone-grid{display:grid; grid-template-columns:1fr 1fr; gap:40px;}
   .zone-col h3{font-size:17px; font-weight:700; margin:0 0 14px;}
@@ -164,15 +169,128 @@ const COUNTIES = {
 
 function cToF(c){ return (c * 9/5) + 32; }
 
-async function fetchStationTemp(id){
+const SKY_NAMES = { FEW:'Few', SCT:'Scattered', BKN:'Broken', OVC:'Overcast', VV:'Vertical Visibility' };
+
+function formatSky(cloudLayers){
+  if(!cloudLayers || cloudLayers.length === 0) return null;
+  const layers = cloudLayers.filter(l => l.amount && l.amount !== 'CLR' && l.amount !== 'SKC');
+  if(layers.length === 0) return 'Clear';
+  return layers.map(l => {
+    const amt = SKY_NAMES[l.amount] || l.amount;
+    const meters = l.base && typeof l.base.value === 'number' ? l.base.value : null;
+    if(meters === null) return amt;
+    const ft = Math.round((meters * 3.28084) / 100) * 100;
+    return `${amt} ${ft.toLocaleString()} ft`;
+  }).join(', ');
+}
+
+const LTG_DIR = { N:'north', S:'south', E:'east', W:'west', NE:'northeast', NW:'northwest', SE:'southeast', SW:'southwest', ALQDS:'all quadrants' };
+const WX_NAMES = { RA:'Rain', SN:'Snow', DZ:'Drizzle', FZRA:'Freezing rain', FZDZ:'Freezing drizzle', GR:'Hail', GS:'Small hail/snow pellets', IC:'Ice crystals', PL:'Ice pellets', UP:'Unknown precipitation', TS:'Thunderstorm', FG:'Fog', BR:'Mist' };
+
+function fmtHHMM(digits){
+  // remarks give minute-only (2 digit) or hour+minute (4 digit) timestamps
+  if(digits.length === 4) return digits.slice(0,2) + ':' + digits.slice(2);
+  return ':' + digits;
+}
+
+// Parses the free-text RMK section of a METAR for the phenomena a general audience
+// would care about. Skips purely technical groups (AO1/AO2 station type, SLP, T-group
+// temp/dewpoint tenths, 5-group pressure tendency) that don't add meaning on-air.
+function parseAsosRemarks(rawMessage){
+  if(!rawMessage) return [];
+  const rmkIdx = rawMessage.indexOf(' RMK ');
+  const rmk = rmkIdx === -1 ? rawMessage : rawMessage.slice(rmkIdx + 5);
+  const out = [];
+
+  // Lightning
+  const ltg = rmk.match(/LTG\s+(DSNT|OHD|VC)\s*([A-Z-]*)/);
+  if(ltg){
+    const [, loc, dirRaw] = ltg;
+    let text = loc === 'DSNT' ? 'Lightning distant' : loc === 'OHD' ? 'Lightning overhead' : 'Lightning in vicinity';
+    if(dirRaw){
+      const dirs = dirRaw.split('-').map(d => LTG_DIR[d]).filter(Boolean);
+      if(dirs.length) text += ' ' + dirs.join(' to ');
+    }
+    out.push(text);
+  }
+
+  // Peak wind: PK WND dddss/(hh)mm
+  const pk = rmk.match(/PK WND (\d{3})(\d{2,3})\/(\d{2})?(\d{2})/);
+  if(pk){
+    const [, dir, spdKt, hh, mm] = pk;
+    const mph = Math.round(parseInt(spdKt,10) * 1.15078);
+    out.push(`Peak wind ${dir}° at ${mph} mph${hh ? ' at ' + hh + ':' + mm : ' at :' + mm}`);
+  }
+
+  // Wind shift, optionally with frontal passage
+  const wshft = rmk.match(/WSHFT (\d{2})(\d{2})( FROPA)?/);
+  if(wshft){
+    out.push(`Wind shift at ${wshft[1]}:${wshft[2]}${wshft[3] ? ' (frontal passage)' : ''}`);
+  } else if(/FROPA/.test(rmk)){
+    out.push('Frontal passage');
+  }
+
+  // Variable visibility: VIS 1V2 1/2
+  const visV = rmk.match(/VIS (\d+(?:\/\d+)?)V(\d+(?:\/\d+)?)/);
+  if(visV) out.push(`Visibility varying ${visV[1]} to ${visV[2]} mi`);
+
+  // Tower / surface visibility
+  const twrVis = rmk.match(/TWR VIS (\d+(?:\/\d+)?)/);
+  if(twrVis) out.push(`Tower visibility ${twrVis[1]} mi`);
+  const sfcVis = rmk.match(/SFC VIS (\d+(?:\/\d+)?)/);
+  if(sfcVis) out.push(`Surface visibility ${sfcVis[1]} mi`);
+
+  // Variable ceiling: CIG 005V010 (hundreds of feet)
+  const cigV = rmk.match(/CIG (\d{3})V(\d{3})/);
+  if(cigV) out.push(`Ceiling varying ${parseInt(cigV[1],10)*100} to ${parseInt(cigV[2],10)*100} ft`);
+
+  // Rapid pressure change
+  if(/PRESFR/.test(rmk)) out.push('Pressure falling rapidly');
+  if(/PRESRR/.test(rmk)) out.push('Pressure rising rapidly');
+
+  // Precipitation / obstruction begin-end times, e.g. RAB35, SNE1245, TSB05E22
+  const beRe = /\b(FZRA|FZDZ|RA|SN|DZ|GR|GS|IC|PL|UP|TS|FG|BR)(B|E)(\d{2}|\d{4})/g;
+  let m;
+  while((m = beRe.exec(rmk)) !== null){
+    const [, code, be, time] = m;
+    const name = WX_NAMES[code] || code;
+    out.push(`${name} ${be === 'B' ? 'began' : 'ended'} at ${fmtHHMM(time)}`);
+  }
+
+  // Hourly precipitation amount: PxxxX (hundredths of an inch)
+  const precip = rmk.match(/\bP(\d{4})\b/);
+  if(precip){
+    const inches = (parseInt(precip[1],10) / 100).toFixed(2);
+    if(parseFloat(inches) > 0) out.push(`Hourly precipitation ${inches} in`);
+  }
+
+  // Snow depth: 4/SSS (inches)
+  const snowDepth = rmk.match(/4\/(\d{3})/);
+  if(snowDepth) out.push(`Snow depth ${parseInt(snowDepth[1],10)} in`);
+
+  // Snow increasing rapidly: SNINCR X/Y
+  const snincr = rmk.match(/SNINCR (\d+)\/(\d+)/);
+  if(snincr) out.push(`Snow increasing rapidly — ${snincr[1]} in last hour, ${snincr[2]} in total`);
+
+  if(/VIRGA/.test(rmk)) out.push('Virga observed');
+
+  return out;
+}
+
+async function fetchStationObservation(id){
   try{
     const res = await fetch(`https://api.weather.gov/stations/${id}/observations/latest`, UA_HEADERS);
     if(!res.ok) throw new Error('bad status');
     const data = await res.json();
-    const c = data?.properties?.temperature?.value;
-    if(c === null || c === undefined) throw new Error('no temp');
-    return Math.round(cToF(c));
-  }catch(e){ return null; }
+    const props = data?.properties || {};
+    const c = props.temperature?.value;
+    const tempF = (c === null || c === undefined) ? null : Math.round(cToF(c));
+    const weather = props.textDescription || null;
+    const remarks = parseAsosRemarks(props.rawMessage);
+    const conditionsParts = [weather ? `Weather: ${weather}` : null, ...remarks].filter(Boolean);
+    const conditions = conditionsParts.length ? conditionsParts.join(' • ') : null;
+    return { tempF, conditions };
+  }catch(e){ return { tempF: null, conditions: null }; }
 }
 
 async function fetchOpenMeteo(lat,lng){
@@ -188,11 +306,27 @@ async function fetchOpenMeteo(lat,lng){
 
 async function renderCounty(colId, stations){
   const col = document.getElementById(colId);
-  const rows = stations.map(()=>{ const r=document.createElement('div'); r.className='temp-row'; col.appendChild(r); return r; });
-  const results = await Promise.all(stations.map(s => s.type === 'asos' ? fetchStationTemp(s.id) : fetchOpenMeteo(s.lat, s.lng)));
+  const rows = stations.map(s=>{
+    const r=document.createElement('div'); r.className = s.type === 'asos' ? 'temp-row no-divider' : 'temp-row'; col.appendChild(r);
+    let condRow = null;
+    if(s.type === 'asos'){
+      condRow = document.createElement('div'); condRow.className='station-conditions'; condRow.textContent='—';
+      col.appendChild(condRow);
+    }
+    return { r, condRow };
+  });
+  const results = await Promise.all(stations.map(s => s.type === 'asos' ? fetchStationObservation(s.id) : fetchOpenMeteo(s.lat, s.lng)));
   stations.forEach((s,i)=>{
-    const val = results[i];
-    rows[i].innerHTML = `<span>${s.name}</span><span class="val ${val===null?'dash':''}">${val===null?'—':val+'°F'}</span>`;
+    const { r, condRow } = rows[i];
+    if(s.type === 'asos'){
+      const obs = results[i];
+      const val = obs.tempF;
+      r.innerHTML = `<span>${s.name}</span><span class="val ${val===null?'dash':''}">${val===null?'—':val+'°F'}</span>`;
+      condRow.textContent = obs.conditions || '—';
+    } else {
+      const val = results[i];
+      r.innerHTML = `<span>${s.name}</span><span class="val ${val===null?'dash':''}">${val===null?'—':val+'°F'}</span>`;
+    }
   });
 }
 
@@ -239,7 +373,7 @@ async function fetchZonePeriods(zoneId){
     if(!res.ok) throw new Error('bad status');
     const data = await res.json();
     const periods = data?.properties?.periods || [];
-    return periods.slice(0, 4).map(p => ({ label: (p.name || '').toUpperCase(), text: p.detailedForecast || '' }));
+    return periods.slice(0, 5).map(p => ({ label: (p.name || '').toUpperCase(), text: p.detailedForecast || '' }));
   }catch(e){ return []; }
 }
 
@@ -396,13 +530,13 @@ setTimeout(()=>location.reload(), 7 * 60 * 1000);
 <tr>
 <td>
 <center>
-<font color="lightgreen"><b>Atlantic City Boardwalk</b></font><br>
+<font color="lightgreen"><b>Atlantic City Boardwalk at Tennessee Avenue</b></font><br>
 <iframe width="560" height="315" src="https://www.youtube.com/embed/xdR31xv7il0?si=8OmDUdtwe4W6gV4R" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 </center>
 </td>
 <td>
 <center>
-<font color="lightgreen"><b>Ocean City Boardwalk</b></font><br>
+<font color="lightgreen"><b>Ocean City Boardwalk at 8th Street</b></font><br>
 <iframe width="560" height="315" src="https://www.youtube.com/embed/kBvlAcTHVlE?si=HR2CuoDOX-ytSNuJ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 </center>
 </td>
