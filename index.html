@@ -228,28 +228,26 @@ async function fetchOpenMeteo(lat,lng){
 
 async function renderCounty(colId, stations){
   const col = document.getElementById(colId);
-  const rows = stations.map(s=>{
+  const rowPromises = stations.map(s=>{
     const r=document.createElement('div'); r.className = s.type === 'asos' ? 'temp-row no-divider' : 'temp-row'; col.appendChild(r);
     let condRow = null;
     if(s.type === 'asos'){
       condRow = document.createElement('div'); condRow.className='station-conditions'; condRow.textContent='—';
       col.appendChild(condRow);
     }
-    return { r, condRow };
+    const fetchPromise = s.type === 'asos' ? fetchStationObservation(s.id) : fetchOpenMeteo(s.lat, s.lng);
+    return fetchPromise.then(result => {
+      if(s.type === 'asos'){
+        const val = result.tempF;
+        r.innerHTML = `<span>${s.name}</span><span class="val ${val===null?'dash':''}">${val===null?'—':val+'°F'}</span>`;
+        condRow.textContent = result.conditions || '—';
+      } else {
+        const val = result;
+        r.innerHTML = `<span>${s.name}</span><span class="val ${val===null?'dash':''}">${val===null?'—':val+'°F'}</span>`;
+      }
+    });
   });
-  const results = await Promise.all(stations.map(s => s.type === 'asos' ? fetchStationObservation(s.id) : fetchOpenMeteo(s.lat, s.lng)));
-  stations.forEach((s,i)=>{
-    const { r, condRow } = rows[i];
-    if(s.type === 'asos'){
-      const obs = results[i];
-      const val = obs.tempF;
-      r.innerHTML = `<span>${s.name}</span><span class="val ${val===null?'dash':''}">${val===null?'—':val+'°F'}</span>`;
-      condRow.textContent = obs.conditions || '—';
-    } else {
-      const val = results[i];
-      r.innerHTML = `<span>${s.name}</span><span class="val ${val===null?'dash':''}">${val===null?'—':val+'°F'}</span>`;
-    }
-  });
+  await Promise.all(rowPromises);
 }
 
 // ---------- Alerts ----------
