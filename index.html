@@ -215,7 +215,7 @@ async function fetchStationObservation(id){
         const ageMin = (Date.now() - obsTime.getTime()) / 60000;
         if(ageMin > 75){
           const timeStr = obsTime.toLocaleString('en-US', { hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/New_York' });
-          staleNote = `Report from ${timeStr} — may be outdated`;
+          staleNote = `Report from ${timeStr} and may be old`;
         }
       }
       return { tempF, weather, staleNote };
