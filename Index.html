@@ -85,7 +85,7 @@
 <header>
   <h1>South Jersey Weather</h1>
   <img src="https://townsquare.media/site/1013/files/2021/10/attachment-ts-logo-mediasouth-jersey3-white.png" width="250" height="92">
-  <div id="lastUpdated">Last updated: --</font></div>
+  <div id="lastUpdated">Last Updated: --</font></div>
 </header>
 
 <section>
@@ -103,7 +103,7 @@
 </section>
 
 <section>
-  <h2 style="color: yellow;">Zone Forecasts</h2>
+  <h2 style="color: yellow;">NWS Zone Forecasts</h2>
   <div class="zone-grid">
     <div class="zone-col" id="zone-inland"><h3 style="color: lightgreen;">INLAND ATLANTIC COUNTY</h3><div class="body">Loading…</div></div>
     <div class="zone-col" id="zone-coastal"><h3 style="color: lightgreen;">COASTAL ATLANTIC COUNTY</h3><div class="body">Loading…</div></div>
@@ -178,8 +178,8 @@ function parseLightning(rawText){
   const m = rmk.match(/LTG\s+(DSNT|OHD|VC)\s*([A-Z-]*)/);
   if(!m) return null;
   const [, loc, dir] = m;
-  const locPhrase = loc === 'DSNT' ? 'distant' : loc === 'OHD' ? 'overhead' : 'in vicinity';
-  return dir ? `lightning ${locPhrase} ${dir}` : `lightning ${locPhrase}`;
+  const locPhrase = loc === 'DSNT' ? 'Distant' : loc === 'OHD' ? 'Overhead' : 'in Vicinity';
+  return dir ? `Lightning ${locPhrase} ${dir}` : `Lightning ${locPhrase}`;
 }
 
 // aviationweather.gov (the only reliable source of the full raw METAR, remarks included)
@@ -215,7 +215,7 @@ async function fetchStationObservation(id){
         const ageMin = (Date.now() - obsTime.getTime()) / 60000;
         if(ageMin > 75){
           const timeStr = obsTime.toLocaleString('en-US', { hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/New_York' });
-          staleNote = `report from ${timeStr} — may be outdated`;
+          staleNote = `Report from ${timeStr} — may be outdated`;
         }
       }
       return { tempF, weather, staleNote };
@@ -486,7 +486,7 @@ setTimeout(()=>location.reload(), 7 * 60 * 1000);
 </section>
 
 <section>
-<h2 style="color: yellow;">Local Doppler Radar</h2>
+<h2 style="color: yellow;">Local Doppler Radar and Lightning Tracker</h2>
 <center>
 <iframe width="650" height="450" src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=in&metricTemp=°F&metricWind=mph&zoom=8&overlay=radar&product=radar&level=surface&lat=39.324&lon=-74.774&message=true" frameborder="0"></iframe>
 </center>
