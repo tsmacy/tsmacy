@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TSM-ACY South Jersey Weather</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a0a; --fg:#ffffff; --dim:#9a9a9a; --line:#e65050;
+    --red:#3a0d0d; --red-b:#ff4d4d;
+    --orange:#3a220d; --orange-b:#ff9f40;
+    --yellow:#3a350d; --yellow-b:#ffe066;
+    --grey:#222222; --grey-b:#999999;
+    --green-b:#3ddc84;
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--fg); font-family:'Inter',sans-serif;
+    font-size:16px; margin:0; padding:32px 40px 80px; min-width:1100px;
+  }
+  header{
+    display:flex; justify-content:space-between; align-items:baseline;
+    border-bottom:2px solid var(--line); padding-bottom:16px; margin-bottom:28px;
+  }
+  h1{font-size:28px; font-weight:800; margin:0;}
+  #lastUpdated{font-size:14px; color:var(--dim); font-weight:600;}
+  section{margin-bottom:44px;}
+  h2{
+    font-size:15px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--dim); font-weight:700; margin:0 0 14px;
+    border-bottom:1px solid var(--line); padding-bottom:8px;
+  }
+  /* Alerts */
+  .alert-row{
+    display:flex; align-items:center; gap:12px; padding:12px 14px;
+    border-radius:6px; margin-bottom:8px; font-size:15px; font-weight:600;
+  }
+  .dot{width:10px; height:10px; border-radius:50%; flex:0 0 auto;}
+  .alert-warning{background:var(--red); border:1px solid var(--red-b);}
+  .alert-warning .dot{background:var(--red-b);}
+  .alert-watch{background:var(--orange); border:1px solid var(--orange-b);}
+  .alert-watch .dot{background:var(--orange-b);}
+  .alert-advisory{background:var(--yellow); border:1px solid var(--yellow-b); color:#0a0a0a;}
+  .alert-advisory .dot{background:#0a0a0a;}
+  .alert-other{background:var(--grey); border:1px solid var(--grey-b);}
+  .alert-other .dot{background:var(--grey-b);}
+  .alert-none{background:var(--grey); border:1px solid #444;}
+  .alert-none .dot{background:#666;}
+  /* Temperature columns */
+  .temp-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:32px;}
+  .county-col h3{font-size:17px; font-weight:700; margin:0 0 12px;}
+  .temp-row{
+    display:flex; justify-content:space-between; padding:8px 0;
+    border-bottom:1px solid var(--line); font-size:15px;
+  }
+  .temp-row .val{font-weight:800; font-size:17px; color:#fff;}
+  .temp-row .val.dash{color:var(--dim); font-weight:600;}
+  .station-conditions{
+    font-size:13px; color:var(--fg); font-weight:600;
+    padding:2px 0 8px 0; border-bottom:1px solid var(--line);
+  }
+  .temp-row.no-divider{border-bottom:none;}
+  /* Zone forecasts */
+  .zone-grid{display:grid; grid-template-columns:1fr 1fr; gap:40px;}
+  .zone-col h3{font-size:17px; font-weight:700; margin:0 0 14px;}
+  .daypart{margin-bottom:14px;}
+  .daypart .label{font-weight:700; font-size:15px; display:block; margin-bottom:2px;}
+  .daypart .text{font-size:15px; color:#ddd; line-height:1.5;}
+  /* Surf summary */
+  .surf-table{width:60%; border-collapse:collapse;}
+  .surf-table tr{border-bottom:1px solid var(--line);}
+  .surf-table td{padding:10px 8px; font-size:15px;}
+  .surf-table td:first-child{color:var(--dim); font-weight:600; width:40%;}
+  .surf-table td:last-child{font-weight:800; font-size:16px;}
+  .risk-high{color:var(--red-b);}
+  .risk-moderate{color:var(--orange-b);}
+  .risk-low{color:var(--green-b);}
+  .dash{color:var(--dim); font-weight:600 !important;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>South Jersey Weather</h1>
+  <img src="https://townsquare.media/site/1013/files/2021/10/attachment-ts-logo-mediasouth-jersey3-white.png" width="250" height="92">
+  <div id="lastUpdated">Last updated: --</font></div>
+</header>
+
+<section>
+  <h2 style="color: yellow;">Local Weather Alerts</h2>
+  <div id="alerts"><div class="alert-row alert-none"><span class="dot"></span>Loading alerts…</div></div>
+</section>
+
+<section>
+  <h2 style="color: yellow;">Current Temperatures</h2>
+  <div class="temp-grid">
+    <div class="county-col" id="col-atlantic"><h3 style="color: lightgreen;">ATLANTIC COUNTY</h3></div>
+    <div class="county-col" id="col-capemay"><h3 style="color: lightgreen;">CAPE MAY COUNTY</h3></div>
+    <div class="county-col" id="col-cumberland"><h3 style="color: lightgreen;">CUMBERLAND COUNTY</h3></div>
+  </div>
+</section>
+
+<section>
+  <h2 style="color: yellow;">Zone Forecasts</h2>
+  <div class="zone-grid">
+    <div class="zone-col" id="zone-inland"><h3 style="color: lightgreen;">INLAND ATLANTIC COUNTY</h3><div class="body">Loading…</div></div>
+    <div class="zone-col" id="zone-coastal"><h3 style="color: lightgreen;">COASTAL ATLANTIC COUNTY</h3><div class="body">Loading…</div></div>
+  </div>
+</section>
+
+<section>
+  <h2 style="color: yellow;">Surf Summary — Coastal Atlantic County</h2>
+  <table class="surf-table" id="surfTable">
+    <tr><td><font color="white">Rip Current Risk</font></td><td id="surf-rip" class="dash">—</td></tr>
+    <tr><td><font color="white">Surf Height</font></td><td id="surf-height" class="dash">—</td></tr>
+    <tr><td><font color="white">Water Temperature</font></td><td id="surf-watertemp" class="dash">—</td></tr>
+    <tr><td><font color="white">UV Index</font></td><td id="surf-uv" class="dash">—</td></tr>
+    <tr><td><font color="white">Tides (Atlantic City-Ocean)</font></td><td id="surf-tides" class="dash">—</td></tr>
+    <tr><td><font color="white">Sunrise</font></td><td id="surf-sunrise" class="dash">—</td></tr>
+    <tr><td><font color="white">Sunset</font></td><td id="surf-sunset" class="dash">—</td></tr>
+    <tr><td><font color="white">Winds</font></td><td id="surf-winds" class="dash">—</td></tr>
+  </table>
+</section>
+
+<script>
+const UA_HEADERS = { headers: { 'Accept': 'application/geo+json, application/ld+json, text/plain, */*' } };
+
+// ---------- Station config ----------
+const COUNTIES = {
+  'col-atlantic': [
+    {name:'✈️ Atlantic City International Airport', type:'asos', id:'KACY'},
+    {name:'Hammonton', type:'om', lat:39.6316, lng:-74.7995},
+    {name:'Mullica Township', type:'om', lat:39.5820, lng:-74.5441},
+    {name:'Egg Harbor City', type:'om', lat:39.5321, lng:-74.6585},
+    {name:'Mays Landing', type:'om', lat:39.4523, lng:-74.7277},
+    {name:'Estell Manor', type:'om', lat:39.4085, lng:-74.7213},
+    {name:'Northfield', type:'om', lat:39.3784, lng:-74.5552},
+    {name:'Brigantine', type:'om', lat:39.4101, lng:-74.3641},
+    {name:'🌊 Atlantic City Boardwalk', type:'om', lat:39.3643, lng:-74.4229},
+    {name:'Longport', type:'om', lat:39.3087, lng:-74.5321},
+    {name:'Somers Point', type:'om', lat:39.3176, lng:-74.5996},
+  ],
+  'col-capemay': [
+    {name:'✈️ Rio Grande/Cape May County Airport', type:'asos', id:'KWWD'},
+    {name:'🌊 Ocean City Boardwalk', type:'om', lat:39.2754, lng:-74.5697},
+    {name:'Upper Township', type:'om', lat:39.2154, lng:-74.7432},
+    {name:'Dennisville', type:'om', lat:39.1912, lng:-74.8223},
+    {name:'Woodbine', type:'om', lat:39.2415, lng:-74.8138},
+    {name:'Cape May Court House', type:'om', lat:39.0840, lng:-74.8249},
+    {name:'Stone Harbor', type:'om', lat:39.0540, lng:-74.7596},
+    {name:'🌊 Wildwood Boardwalk', type:'om', lat:38.9929, lng:-74.8138},
+    {name:'Villas', type:'om', lat:39.0158, lng:-74.9417},
+    {name:'Cape May (Downtown)', type:'om', lat:38.9318, lng:-74.9109},
+    {name:'Cape May (Sunset Beach)', type:'om', lat:38.9445, lng:-74.9701},
+  ],
+  'col-cumberland': [
+    {name:'✈️ Millville Municipal Airport', type:'asos', id:'KMIV'},
+    {name:'Vineland', type:'om', lat:39.4853, lng:-75.0432},
+    {name:'Maurice River Township', type:'om', lat:39.2876, lng:-75.0321},
+    {name:'Port Norris', type:'om', lat:39.2398, lng:-75.0432},
+    {name:'Upper Deerfield Township', type:'om', lat:39.4976, lng:-75.1543},
+    {name:'Bridgeton', type:'om', lat:39.4265, lng:-75.2338},
+    {name:'Fortesque', type:'om', lat:39.2379, lng:-75.1714},
+    {name:'Stow Creek Township', type:'om', lat:39.4528, lng:-75.3406},
+  ],
+};
+
+function cToF(c){ return (c * 9/5) + 32; }
+
+// Lightning is the only remark we surface on-air — direction left abbreviated (e.g. "SW")
+// as it appears in the raw METAR, no spelled-out conversion.
+function parseLightning(rawText){
+  if(!rawText) return null;
+  const rmkIdx = rawText.indexOf(' RMK ');
+  const rmk = rmkIdx === -1 ? rawText : rawText.slice(rmkIdx + 5);
+  const m = rmk.match(/LTG\s+(DSNT|OHD|VC)\s*([A-Z-]*)/);
+  if(!m) return null;
+  const [, loc, dir] = m;
+  const locPhrase = loc === 'DSNT' ? 'distant' : loc === 'OHD' ? 'overhead' : 'in vicinity';
+  return dir ? `lightning ${locPhrase} ${dir}` : `lightning ${locPhrase}`;
+}
+
+// aviationweather.gov (the only reliable source of the full raw METAR, remarks included)
+// sends no CORS headers, so a direct browser fetch is blocked outright. This routes the
+// request through a free public CORS-relay proxy as a best-effort enhancement — if the
+// proxy is unavailable, lightning is just silently omitted; temp/conditions still work
+// since those come from api.weather.gov below, independent of this call.
+async function fetchLightningRemark(id){
+  try{
+    const target = encodeURIComponent(`https://aviationweather.gov/api/data/metar?ids=${id}&format=raw`);
+    const res = await fetch(`https://api.allorigins.win/raw?url=${target}`);
+    if(!res.ok) throw new Error('bad status');
+    const text = await res.text();
+    return parseLightning(text);
+  }catch(e){ return null; }
+}
+
+async function fetchStationObservation(id){
+  const obsPromise = (async () => {
+    try{
+      const res = await fetch(`https://api.weather.gov/stations/${id}/observations/latest`, UA_HEADERS);
+      if(!res.ok) throw new Error('bad status');
+      const data = await res.json();
+      const props = data?.properties || {};
+      const c = props.temperature?.value;
+      const tempF = (c === null || c === undefined) ? null : Math.round(cToF(c));
+      const weather = props.textDescription || null;
+      // METARs post roughly hourly (occasionally sooner via SPECI); anything older than
+      // 75 minutes is past due and shouldn't be presented as current on-air.
+      let staleNote = null;
+      if(props.timestamp){
+        const obsTime = new Date(props.timestamp);
+        const ageMin = (Date.now() - obsTime.getTime()) / 60000;
+        if(ageMin > 75){
+          const timeStr = obsTime.toLocaleString('en-US', { hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/New_York' });
+          staleNote = `report from ${timeStr} — may be outdated`;
+        }
+      }
+      return { tempF, weather, staleNote };
+    }catch(e){ return { tempF: null, weather: null, staleNote: null }; }
+  })();
+  const [obs, lightning] = await Promise.all([obsPromise, fetchLightningRemark(id)]);
+  const conditions = [obs.weather ? `Current Weather: ${obs.weather}` : null, lightning, obs.staleNote].filter(Boolean).join(', ') || null;
+  return { tempF: obs.tempF, conditions };
+}
+
+async function fetchOpenMeteo(lat,lng){
+  try{
+    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m&temperature_unit=fahrenheit`);
+    if(!res.ok) throw new Error('bad status');
+    const data = await res.json();
+    const t = data?.current?.temperature_2m;
+    if(t === null || t === undefined) throw new Error('no temp');
+    return Math.round(t);
+  }catch(e){ return null; }
+}
+
+async function renderCounty(colId, stations){
+  const col = document.getElementById(colId);
+  const rowPromises = stations.map(s=>{
+    const r=document.createElement('div'); r.className = s.type === 'asos' ? 'temp-row no-divider' : 'temp-row'; col.appendChild(r);
+    let condRow = null;
+    if(s.type === 'asos'){
+      condRow = document.createElement('div'); condRow.className='station-conditions'; condRow.textContent='—';
+      col.appendChild(condRow);
+    }
+    const fetchPromise = s.type === 'asos' ? fetchStationObservation(s.id) : fetchOpenMeteo(s.lat, s.lng);
+    return fetchPromise.then(result => {
+      if(s.type === 'asos'){
+        const val = result.tempF;
+        r.innerHTML = `<span>${s.name}</span><span class="val ${val===null?'dash':''}">${val===null?'—':val+'°F'}</span>`;
+        condRow.textContent = result.conditions || '—';
+      } else {
+        const val = result;
+        r.innerHTML = `<span>${s.name}</span><span class="val ${val===null?'dash':''}">${val===null?'—':val+'°F'}</span>`;
+      }
+    });
+  });
+  await Promise.all(rowPromises);
+}
+
+// ---------- Alerts ----------
+async function renderAlerts(){
+  const container = document.getElementById('alerts');
+  try{
+    const res = await fetch('https://api.weather.gov/alerts/active?zone=NJZ022,NJZ025,NJZ024,NJC001,NJC009,NJC011', UA_HEADERS);
+    if(!res.ok) throw new Error('bad status');
+    const data = await res.json();
+    const features = data.features || [];
+    if(features.length === 0){
+      container.innerHTML = `<div class="alert-row alert-none"><span class="dot"></span>No active alerts for Atlantic, Cape May, or Cumberland Counties</div>`;
+      return;
+    }
+    container.innerHTML = '';
+    features.forEach(f=>{
+      const p = f.properties;
+      const type = p.event || 'Alert';
+      const area = p.areaDesc || 'Affected area unavailable';
+      let expires = '—';
+      if(p.expires){
+        const d = new Date(p.expires);
+        expires = d.toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/New_York', timeZoneName:'short' });
+      }
+      let cls = 'alert-other';
+      if(/warning/i.test(type)) cls = 'alert-warning';
+      else if(/watch/i.test(type)) cls = 'alert-watch';
+      else if(/advisory/i.test(type)) cls = 'alert-advisory';
+      const row = document.createElement('div');
+      row.className = `alert-row ${cls}`;
+      row.innerHTML = `<span class="dot"></span><span>${type} — ${area} — In effect until ${expires}</span>`;
+      container.appendChild(row);
+    });
+  }catch(e){
+    container.innerHTML = `<div class="alert-row alert-none"><span class="dot"></span>No active alerts for Atlantic, Cape May, or Cumberland Counties</div>`;
+  }
+}
+
+// ---------- Zone forecasts (structured JSON — reliable, no text scraping) ----------
+async function fetchZonePeriods(zoneId){
+  try{
+    const res = await fetch(`https://api.weather.gov/zones/forecast/${zoneId}/forecast`, UA_HEADERS);
+    if(!res.ok) throw new Error('bad status');
+    const data = await res.json();
+    const periods = data?.properties?.periods || [];
+    return periods.slice(0, 5).map(p => ({ label: (p.name || '').toUpperCase(), text: p.detailedForecast || '' }));
+  }catch(e){ return []; }
+}
+
+function renderZoneCol(elId, dayparts){
+  const el = document.querySelector(`#${elId} .body`);
+  if(!dayparts || dayparts.length === 0){
+    el.innerHTML = `<div class="daypart"><span class="text dash">—</span></div>`;
+    return;
+  }
+  el.innerHTML = dayparts.map(d => `<div class="daypart"><span class="label">${d.label}</span><span class="text">${d.text}</span></div>`).join('');
+}
+  
+// ---------- Surf summary (SRF text product — the only NWS source for these fields) ----------
+async function fetchSurfProductText(){
+  try{
+    const res = await fetch('https://api.weather.gov/products/types/SRF/locations/PHI/latest', UA_HEADERS);
+    if(!res.ok) throw new Error('bad status');
+    const data = await res.json();
+    if(data && data.productText) return data.productText;
+    throw new Error('no productText');
+  }catch(e){
+    try{
+      const res2 = await fetch('https://tgftp.nws.noaa.gov/data/raw/fz/fzus51.kphi.srf.phi.txt');
+      if(!res2.ok) throw new Error('bad status');
+      return await res2.text();
+    }catch(e2){ return null; }
+  }
+}
+
+function extractZoneChunk(text, zoneCode){
+  const idx = text.indexOf(zoneCode);
+  if(idx === -1) return null;
+  const rest = text.slice(idx + zoneCode.length);
+  const nextZoneMatch = rest.match(/\nNJZ0\d\d-/);
+  const endMarker = rest.indexOf('$$');
+  let end = rest.length;
+  if(nextZoneMatch) end = Math.min(end, nextZoneMatch.index);
+  if(endMarker !== -1) end = Math.min(end, endMarker);
+  return rest.slice(0, end);
+}
+
+// SRF product bundles fields inline per day, e.g.:
+// "Rip Current Risk...Moderate. Surf Height...2 to 3 feet. Thunderstorm Potential**...Low.
+//  UV Index**...Moderate. Water Temperature...In the mid 60s. Weather...Partly sunny...
+//  High Temperature...In the lower 80s. Winds...Southeast winds 5 to 10 mph.
+//  Tides... Atlantic City...Low at 06:33 AM EDT. High at 12:55 PM EDT.
+//  Sunrise...6:01 AM. Sunset...8:06 PM."
+// Labels can be preceded by ** markers before the "...". Parse by finding each label's
+// position and taking everything up to the next known label.
+const SRF_LABELS = ['Rip Current Risk','Surf Height','Thunderstorm Potential','UV Index',
+  'Water Temperature','Weather','High Temperature','Winds','Tides','High tide','Low tide','Sunrise','Sunset'];
+
+function findFirstDayText(fullText, zoneCode){
+  const chunk = extractZoneChunk(fullText, zoneCode);
+  if(!chunk) return null;
+  // first ".LABEL..." period block in the chunk (e.g. ".TODAY...")
+  const m = chunk.match(/\.([A-Z][A-Z0-9 ]{1,30}?)\.\.\.([\s\S]*?)(?=\n\.[A-Z]|\n\$\$|\n\n|$)/);
+  if(!m) return null;
+  return m[2].replace(/\s+/g,' ').trim();
+}
+
+function extractSrfField(dayText, label){
+  if(!dayText) return null;
+  const escLabel = label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const labelRe = new RegExp(escLabel + '\\*{0,2}\\s*\\.{2,}\\s*', 'i');
+  const m = dayText.match(labelRe);
+  if(!m) return null;
+  const start = m.index + m[0].length;
+  let end = dayText.length;
+  for(const nl of SRF_LABELS){
+    if(nl === label) continue;
+    const escNl = nl.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    const nlRe = new RegExp(escNl + '\\*{0,2}\\s*\\.{2,}', 'i');
+    const nm = dayText.slice(start).match(nlRe);
+    if(nm) end = Math.min(end, start + nm.index);
+  }
+  return dayText.slice(start, end).trim().replace(/\.+$/, '').trim();
+}
+
+function setSurfField(id, value, riskClass){
+  const el = document.getElementById(id);
+  if(value === null || value === undefined || value === ''){
+    el.textContent = '—';
+    el.className = 'dash';
+  } else {
+    el.textContent = value + (/[.]$/.test(value) ? '' : '');
+    el.className = riskClass || '';
+  }
+}
+
+async function renderZonesAndSurf(){
+  const [inlandDayparts, coastalDayparts, srfText] = await Promise.all([
+    fetchZonePeriods('NJZ022'),
+    fetchZonePeriods('NJZ025'),
+    fetchSurfProductText(),
+  ]);
+  renderZoneCol('zone-inland', inlandDayparts);
+  renderZoneCol('zone-coastal', coastalDayparts);
+
+  const todayText = srfText ? findFirstDayText(srfText, 'NJZ025') : null;
+
+  const rip = extractSrfField(todayText, 'Rip Current Risk');
+  const height = extractSrfField(todayText, 'Surf Height');
+  const watertemp = extractSrfField(todayText, 'Water Temperature');
+  const uv = extractSrfField(todayText, 'UV Index');
+  const highTide = extractSrfField(todayText, 'High tide');
+  const lowTide = extractSrfField(todayText, 'Low tide');
+  const sunrise = extractSrfField(todayText, 'Sunrise');
+  const sunset = extractSrfField(todayText, 'Sunset');
+  const winds = extractSrfField(todayText, 'Winds');
+
+  let riskClass = 'dash';
+  if(rip){
+    if(/high/i.test(rip)) riskClass = 'risk-high';
+    else if(/moderate/i.test(rip)) riskClass = 'risk-moderate';
+    else if(/low/i.test(rip)) riskClass = 'risk-low';
+  }
+  setSurfField('surf-rip', rip, riskClass);
+  setSurfField('surf-height', height);
+  setSurfField('surf-watertemp', watertemp);
+  setSurfField('surf-uv', uv);
+
+  let tidesClean;
+  if(highTide || lowTide){
+    // Current NWS format: separate "High tide" / "Low tide" lines, each possibly listing two times
+    tidesClean = [highTide ? `High ${highTide}` : null, lowTide ? `Low ${lowTide}` : null].filter(Boolean).join(', ');
+  } else {
+    // Fallback for the older bundled format: "Tides... Atlantic City...Low at X. High at Y."
+    const tidesRaw = extractSrfField(todayText, 'Tides');
+    tidesClean = tidesRaw ? tidesRaw.replace(/^Atlantic City\s*\.{2,}\s*/i, '').trim() : null;
+  }
+  setSurfField('surf-tides', tidesClean || null);
+  setSurfField('surf-sunrise', sunrise);
+  setSurfField('surf-sunset', sunset);
+  setSurfField('surf-winds', winds);
+}
+
+// ---------- Init ----------
+function stampLastUpdated(){
+  const now = new Date();
+  document.getElementById('lastUpdated').textContent = 'Last updated: ' + now.toLocaleString('en-US', {
+    month:'short', day:'numeric', hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/New_York', timeZoneName:'short'
+  });
+}
+
+async function init(){
+  stampLastUpdated();
+  await Promise.all([
+    renderAlerts(),
+    ...Object.entries(COUNTIES).map(([colId, stations]) => renderCounty(colId, stations)),
+    renderZonesAndSurf(),
+  ]);
+}
+
+init();
+setTimeout(()=>location.reload(), 7 * 60 * 1000);
+</script>
+
+<section>
+  <h2 style="color: yellow;">Live Cameras</h2>
+
+<table width="90%" align="center">
+<tr>
+<td>
+<center>
+<font color="lightgreen"><b>Atlantic City Boardwalk at Tennessee Avenue</b></font><br>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/xdR31xv7il0?si=8OmDUdtwe4W6gV4R" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+</center>
+</td>
+<td>
+<center>
+<font color="lightgreen"><b>Ocean City Boardwalk at 8th Street</b></font><br>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/kBvlAcTHVlE?si=HR2CuoDOX-ytSNuJ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+</center>
+</td>
+</tr>
+</table>
+
+</section>
+
+<section>
+<h2 style="color: yellow;">Local Doppler Radar</h2>
+<center>
+<iframe width="650" height="450" src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=in&metricTemp=°F&metricWind=mph&zoom=8&overlay=radar&product=radar&level=surface&lat=39.324&lon=-74.774&message=true" frameborder="0"></iframe>
+</center>
+
+<section>
+  <h2 style="color: yellow;">Local Links</h2>
+<ul>
+  <li><b><a href="https://wwwv.accuweather.com/wxbrief/dr/?user=wpgg" target="_blank" style="color: white;">WPGG's AccuWeather Forecast (Atlantic City)</b></li>
+  <li><b><a href="https://njbeaches.org/" target="_blank" style="color: white;">NJDEP Ocean Water Quality Map/Info</a></b></li>
+</ul>
+  
+</section>
+  
+</body>
+</html>
