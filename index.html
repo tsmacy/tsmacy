@@ -42,7 +42,7 @@
   .alert-warning .dot{background:var(--red-b);}
   .alert-watch{background:var(--orange); border:1px solid var(--orange-b);}
   .alert-watch .dot{background:var(--orange-b);}
-  .alert-advisory{background:var(--yellow); border:1px solid var(--yellow-b); color:#ffffff;}
+  .alert-advisory{background:var(--yellow); border:1px solid var(--yellow-b); color:#0a0a0a;}
   .alert-advisory .dot{background:#0a0a0a;}
   .alert-other{background:var(--grey); border:1px solid var(--grey-b);}
   .alert-other .dot{background:var(--grey-b);}
@@ -85,7 +85,7 @@
 <header>
   <h1>South Jersey Weather</h1>
   <img src="https://townsquare.media/site/1013/files/2021/10/attachment-ts-logo-mediasouth-jersey3-white.png" width="250" height="92">
-  <div id="lastUpdated">Last Updated: --</font></div>
+  <div id="lastUpdated">Updated: --</font></div>
 </header>
 
 <section>
@@ -103,7 +103,7 @@
 </section>
 
 <section>
-  <h2 style="color: yellow;">NWS Zone Forecasts</h2>
+  <h2 style="color: yellow;">Zone Forecasts</h2>
   <div class="zone-grid">
     <div class="zone-col" id="zone-inland"><h3 style="color: lightgreen;">INLAND ATLANTIC COUNTY</h3><div class="body">Loading…</div></div>
     <div class="zone-col" id="zone-coastal"><h3 style="color: lightgreen;">COASTAL ATLANTIC COUNTY</h3><div class="body">Loading…</div></div>
@@ -178,8 +178,8 @@ function parseLightning(rawText){
   const m = rmk.match(/LTG\s+(DSNT|OHD|VC)\s*([A-Z-]*)/);
   if(!m) return null;
   const [, loc, dir] = m;
-  const locPhrase = loc === 'DSNT' ? 'Distant' : loc === 'OHD' ? 'Overhead' : 'in Vicinity';
-  return dir ? `Lightning ${locPhrase} ${dir}` : `Lightning ${locPhrase}`;
+  const locPhrase = loc === 'DSNT' ? 'distant' : loc === 'OHD' ? 'overhead' : 'in vicinity';
+  return dir ? `lightning ${locPhrase} ${dir}` : `lightning ${locPhrase}`;
 }
 
 // aviationweather.gov (the only reliable source of the full raw METAR, remarks included)
@@ -207,6 +207,15 @@ async function fetchStationObservation(id){
       const c = props.temperature?.value;
       const tempF = (c === null || c === undefined) ? null : Math.round(cToF(c));
       const weather = props.textDescription || null;
+      // Only worth surfacing when visibility is genuinely reduced — 1 mile or less,
+      // whatever the cause (fog, haze, smoke, heavy snow, etc.), not just when the
+      // reported weather type happens to say "fog" or "mist".
+      let visNote = null;
+      const visMeters = props.visibility?.value;
+      if(typeof visMeters === 'number'){
+        const miles = visMeters / 1609.34;
+        if(miles <= 1) visNote = `Visibility ${formatVisibility(miles)}`;
+      }
       // METARs post roughly hourly (occasionally sooner via SPECI); anything older than
       // 75 minutes is past due and shouldn't be presented as current on-air.
       let staleNote = null;
@@ -215,15 +224,28 @@ async function fetchStationObservation(id){
         const ageMin = (Date.now() - obsTime.getTime()) / 60000;
         if(ageMin > 75){
           const timeStr = obsTime.toLocaleString('en-US', { hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/New_York' });
-          staleNote = `Old Report from ${timeStr}`;
+          staleNote = `report from ${timeStr} — may be outdated`;
         }
       }
-      return { tempF, weather, staleNote };
-    }catch(e){ return { tempF: null, weather: null, staleNote: null }; }
+      return { tempF, weather, visNote, staleNote };
+    }catch(e){ return { tempF: null, weather: null, visNote: null, staleNote: null }; }
   })();
   const [obs, lightning] = await Promise.all([obsPromise, fetchLightningRemark(id)]);
-  const conditions = [obs.weather ? `Current Weather: ${obs.weather}` : null, lightning, obs.staleNote].filter(Boolean).join(', ') || null;
+  const conditions = [obs.weather ? `Current Weather: ${obs.weather}` : null, lightning, obs.visNote, obs.staleNote].filter(Boolean).join(', ') || null;
   return { tempF: obs.tempF, conditions };
+}
+
+// Rounds to the nearest quarter mile and formats with fraction glyphs (¼ ½ ¾), matching
+// how visibility is conventionally read on-air.
+function formatVisibility(miles){
+  const rounded = Math.round(miles * 4) / 4;
+  const whole = Math.floor(rounded);
+  const frac = Math.round((rounded - whole) * 4) / 4;
+  const fracMap = { 0.25:'¼', 0.5:'½', 0.75:'¾' };
+  const fracStr = fracMap[frac] || '';
+  if(whole === 0 && !fracStr) return 'near 0 mi';
+  const numStr = [whole > 0 ? String(whole) : null, fracStr].filter(Boolean).join(' ');
+  return `${numStr} mi`;
 }
 
 async function fetchOpenMeteo(lat,lng){
@@ -445,7 +467,7 @@ async function renderZonesAndSurf(){
 // ---------- Init ----------
 function stampLastUpdated(){
   const now = new Date();
-  document.getElementById('lastUpdated').textContent = 'Last updated: ' + now.toLocaleString('en-US', {
+  document.getElementById('lastUpdated').textContent = 'Updated: ' + now.toLocaleString('en-US', {
     month:'short', day:'numeric', hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/New_York', timeZoneName:'short'
   });
 }
@@ -486,7 +508,7 @@ setTimeout(()=>location.reload(), 7 * 60 * 1000);
 </section>
 
 <section>
-<h2 style="color: yellow;">Local Doppler Radar and Lightning Tracker</h2>
+<h2 style="color: yellow;">Local Doppler Radar</h2>
 <center>
 <iframe width="650" height="450" src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=in&metricTemp=°F&metricWind=mph&zoom=8&overlay=radar&product=radar&level=surface&lat=39.324&lon=-74.774&message=true" frameborder="0"></iframe>
 </center>
