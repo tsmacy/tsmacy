@@ -180,7 +180,7 @@ function parseLightning(rawText){
   const [, loc, dirRaw] = m;
   const locPhrase = loc === 'DSNT' ? 'Distant' : loc === 'OHD' ? 'Overhead' : 'in Vicinity';
   const dir = dirRaw === 'ALQDS' ? 'All Directions' : dirRaw;
-  return dir ? `lightning ${locPhrase} ${dir}` : `lightning ${locPhrase}`;
+  return dir ? `Lightning ${locPhrase} ${dir}` : `Lightning ${locPhrase}`;
 }
 
 // aviationweather.gov (the only reliable source of the full raw METAR, remarks included)
