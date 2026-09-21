@@ -1,1 +1,97 @@
-Yes
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TSM-ACY South Jersey Events</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a0a; --fg:#ffffff; --dim:#9a9a9a; --line:#e65050;
+    --red:#3a0d0d; --red-b:#ff4d4d;
+    --orange:#3a220d; --orange-b:#ff9f40;
+    --yellow:#3a350d; --yellow-b:#ffe066;
+    --grey:#222222; --grey-b:#999999;
+    --green-b:#3ddc84;
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--fg); font-family:'Inter',sans-serif;
+    font-size:16px; margin:0; padding:32px 40px 80px; min-width:1100px;
+  }
+  header{
+    display:flex; justify-content:space-between; align-items:baseline;
+    border-bottom:2px solid var(--line); padding-bottom:16px; margin-bottom:28px;
+  }
+  h1{font-size:28px; font-weight:800; margin:0;}
+  #lastUpdated{font-size:14px; color:var(--dim); font-weight:600;}
+  section{margin-bottom:44px;}
+  h2{
+    font-size:15px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--dim); font-weight:700; margin:0 0 14px;
+    border-bottom:1px solid var(--line); padding-bottom:8px;
+  }
+  /* Alerts */
+  .alert-row{
+    display:flex; align-items:center; gap:12px; padding:12px 14px;
+    border-radius:6px; margin-bottom:8px; font-size:15px; font-weight:600;
+  }
+  .dot{width:10px; height:10px; border-radius:50%; flex:0 0 auto;}
+  .alert-warning{background:var(--red); border:1px solid var(--red-b);}
+  .alert-warning .dot{background:var(--red-b);}
+  .alert-watch{background:var(--orange); border:1px solid var(--orange-b);}
+  .alert-watch .dot{background:var(--orange-b);}
+  .alert-advisory{background:var(--yellow); border:1px solid var(--yellow-b); color:#0a0a0a;}
+  .alert-advisory .dot{background:#0a0a0a;}
+  .alert-other{background:var(--grey); border:1px solid var(--grey-b);}
+  .alert-other .dot{background:var(--grey-b);}
+  .alert-none{background:var(--grey); border:1px solid #444;}
+  .alert-none .dot{background:#666;}
+  /* Temperature columns */
+  .temp-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:32px;}
+  .county-col h3{font-size:17px; font-weight:700; margin:0 0 12px;}
+  .temp-row{
+    display:flex; justify-content:space-between; padding:8px 0;
+    border-bottom:1px solid var(--line); font-size:15px;
+  }
+  .temp-row .val{font-weight:800; font-size:17px; color:#fff;}
+  .temp-row .val.dash{color:var(--dim); font-weight:600;}
+  .station-conditions{
+    font-size:13px; color:var(--fg); font-weight:600;
+    padding:2px 0 8px 0; border-bottom:1px solid var(--line);
+  }
+  .temp-row.no-divider{border-bottom:none;}
+  /* Zone forecasts */
+  .zone-grid{display:grid; grid-template-columns:1fr 1fr; gap:40px;}
+  .zone-col h3{font-size:17px; font-weight:700; margin:0 0 14px;}
+  .daypart{margin-bottom:14px;}
+  .daypart .label{font-weight:700; font-size:15px; display:block; margin-bottom:2px;}
+  .daypart .text{font-size:15px; color:#ddd; line-height:1.5;}
+  /* Surf summary */
+  .surf-table{width:60%; border-collapse:collapse;}
+  .surf-table tr{border-bottom:1px solid var(--line);}
+  .surf-table td{padding:10px 8px; font-size:15px;}
+  .surf-table td:first-child{color:var(--dim); font-weight:600; width:40%;}
+  .surf-table td:last-child{font-weight:800; font-size:16px;}
+  .risk-high{color:var(--red-b);}
+  .risk-moderate{color:var(--orange-b);}
+  .risk-low{color:var(--green-b);}
+  .dash{color:var(--dim); font-weight:600 !important;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>South Jersey Events Calendar</h1>
+  <img src="https://townsquare.media/site/1013/files/2021/10/attachment-ts-logo-mediasouth-jersey3-white.png" width="250" height="92">
+  <div id="lastUpdated">Updated: 09/21/26</font></div>
+</header>
+
+<h2 style="color: yellow;">Current Temperatures</h2>
+ Events go here
+  
+
+
+</body>
+</html>
